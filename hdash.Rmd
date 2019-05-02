@@ -1,0 +1,68 @@
+---
+title: "Hospital Care"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Hospitals per 100k
+
+```{r}
+library(tidyverse)
+library(usmap)
+hospitals <- read_csv("../Hospital General Information.csv")
+
+hospital_by_typer <- hospitals %>%
+    group_by(State, `Hospital Type`, `Hospital overall rating`) %>% 
+    summarise(Count = n()) %>%
+    #adding state pop
+    left_join(statepop, by = c("State" = "abbr"))
+
+#write_csv(hospital_by_typer, "hospital_by_state.csv")
+
+library(highcharter)
+
+# state maps - fl
+# https://code.highcharts.com/mapdata/countries/us/us-fl-all.js
+
+mapdata <- get_data_from_map(download_map_data("https://code.highcharts.com/mapdata/countries/us/us-all.js"))
+
+hospital_by_state  <- hospital_by_typer %>%
+    group_by(State, pop_2015) %>%
+    summarise(Count = sum(Count)) %>%
+    filter(!is.na(pop_2015)) %>%
+    mutate(HPP = (Count*100000)/pop_2015)
+```
+```{r, echo=TRUE}
+
+hcmap("https://code.highcharts.com/mapdata/countries/us/us-all.js", data = hospital_by_state, value = "HPP",
+      name = "Hospitals per 100k", joinBy = c("hc-a2", "State"),
+      dataLabels = list(enabled = TRUE, format = '{point.name}'),
+      borderColor = "grey", borderWidth = 0.1,
+      tooltip = list(valueDecimals = 0))
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### County View
+
+```{r}
+
+```
+
+### External
+
+```{r}
+
+```
+
